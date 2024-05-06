@@ -1,0 +1,20 @@
+:root {
+  font-family: Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+.react-pdf__Page__canvas {
+  width: 100%;
+  padding: 10px;
+  background-color: #CEC6B4;
+}
