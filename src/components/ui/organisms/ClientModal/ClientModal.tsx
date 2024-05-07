@@ -27,6 +27,7 @@ import { ThunkDispatch } from "@reduxjs/toolkit";
 import useComboRepository from "../../../../hooks/repositories/useComboRepository";
 import { ComboSelect } from "../../../../models/combo.model";
 import useAlert from "../../../../hooks/useAlert";
+import { validateSize } from "../../../../utilities/file.util";
 
 export const ClientModal = () => {
   const [selectedFile, setSelectedFile] = useState<File>();
@@ -36,13 +37,13 @@ export const ClientModal = () => {
   const imageRef = useRef<HTMLInputElement>();
   const inputRef = useRef<HTMLInputElement>();
 
-  const dispatch = useDispatch<ThunkDispatch<any,any,any>>();
+  const dispatch = useDispatch<ThunkDispatch<any, any, any>>();
   const { isModalClientOpen, isModalCVOpen, isEditClient, detalleCliente } = useSelector(
     (store: RootStateType) => store.client
   );
 
-  const clientRepository = useClientRepository()
-  const comboRepository = useComboRepository()
+  const clientRepository = useClientRepository();
+  const comboRepository = useComboRepository();
 
   const alert = useAlert();
 
@@ -56,19 +57,25 @@ export const ClientModal = () => {
 
   const { errors } = formState;
 
-  const { ref: refImg, ...restImg } = register("imagen"
-  // , { required: "La imagen es requerida" }
-);
-  const { ref: refCV, ...restCV } = register("hojaVida"
-  // , {
-  //   required: "La hoja de vida es requerida",
-  // }
-);
+  const { ref: refImg, ...restImg } = register(
+    "imagen"
+    // , { required: "La imagen es requerida" }
+  );
+  const { ref: refCV, ...restCV } = register(
+    "hojaVida"
+    // , {
+    //   required: "La hoja de vida es requerida",
+    // }
+  );
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>, type: "file" | "image") => {
     const file = event.target.files?.[0];
     if (file) {
-      type === "file" ? setSelectedFile(file) : setSelectedImage(file);
+      if (type === "file") {
+        validateSize(file, 5) ? setSelectedFile(file) : alert.warningAlert("El archivo debe ser inferior a 5Mb");
+      } else {
+        setSelectedImage(file);
+      }
     }
   };
 
@@ -82,37 +89,37 @@ export const ClientModal = () => {
   };
 
   const onSubmit = async (data: ClientForm) => {
-    if(!isEditClient){
-      const response = await clientRepository.create(data)
-      if(response){
-        dispatch(setClientsCatalog())
-        dispatch(setModalClient(!isModalClientOpen))
-        alert.successAlert("Cliente creado correctamente")
+    if (!isEditClient) {
+      const response = await clientRepository.create(data);
+      if (response) {
+        dispatch(setClientsCatalog());
+        dispatch(setModalClient(!isModalClientOpen));
+        alert.successAlert("Cliente creado correctamente");
       }
-    }else{
-      const response = await clientRepository.update(data)
-      if(response){
-        dispatch(setClientsCatalog())
-        dispatch(setModalClient(!isModalClientOpen))
-        alert.successAlert("Cliente actualizado correctamente")
+    } else {
+      const response = await clientRepository.update(data);
+      if (response) {
+        dispatch(setClientsCatalog());
+        dispatch(setModalClient(!isModalClientOpen));
+        alert.successAlert("Cliente actualizado correctamente");
       }
     }
   };
 
   const loadCombos = async () => {
     const response = await comboRepository.getDocumentTypes();
-    if(response){
-      setDocumentTypes(response)
+    if (response) {
+      setDocumentTypes(response);
     }
-  }
+  };
 
   useEffect(() => {
     detalleCliente ? form.reset(detalleCliente) : form.reset(clientFormDefaultValues);
   }, [detalleCliente]);
 
-  useEffect(()=> {
-    loadCombos()
-  },[])
+  useEffect(() => {
+    loadCombos();
+  }, []);
 
   return (
     <div>
@@ -170,7 +177,9 @@ export const ClientModal = () => {
                     id: "idTipoDocumento",
                     label: "Tipo de Documento",
                     variant: "outlined",
-                    ...register("idTipoDocumento", { required: "El tipo de documento es requerido" }),
+                    ...register("idTipoDocumento", {
+                      required: "El tipo de documento es requerido",
+                    }),
                     error: !!errors.idTipoDocumento,
                     disabled: isEditClient,
                   }}

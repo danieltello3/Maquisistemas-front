@@ -18,3 +18,7 @@ body {
   padding: 10px;
   background-color: #CEC6B4;
 }
+
+.swal2-container{
+  z-index: 100000;
+}

@@ -8,3 +8,10 @@ export const downloadFileBlob = (blob: BlobPart, fileName: string) => {
   link.click();
   link.remove();
 };
+
+export const  validateSize = (file: File, maxSize: number): boolean => {
+  const sizeBytes = file.size;
+  const sizeMb = sizeBytes / (1024 * 1024);
+
+  return sizeMb <= maxSize;
+}
