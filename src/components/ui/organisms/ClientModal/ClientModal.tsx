@@ -21,18 +21,27 @@ import { modalStyle } from "../../../../utilities/modal.util";
 import { PdfViewerModal } from "../PdfViewerModal/PdfViewerModal";
 import { useForm } from "react-hook-form";
 import { ClientForm, clientFormDefaultValues } from "../../../../models/clients.model";
+import useClientRepository from "../../../../hooks/repositories/useClientRepository";
+import { setClientsCatalog } from "../../../../redux/actions/client.actions";
+import { ThunkDispatch } from "@reduxjs/toolkit";
+import useComboRepository from "../../../../hooks/repositories/useComboRepository";
+import { ComboSelect } from "../../../../models/combo.model";
 
 export const ClientModal = () => {
   const [selectedFile, setSelectedFile] = useState<File>();
   const [selectedImage, setSelectedImage] = useState<File>();
+  const [documentTypes, setDocumentTypes] = useState<ComboSelect[]>([]);
 
   const imageRef = useRef<HTMLInputElement>();
   const inputRef = useRef<HTMLInputElement>();
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<ThunkDispatch<any,any,any>>();
   const { isModalClientOpen, isModalCVOpen, isEditClient, detalleCliente } = useSelector(
     (store: RootStateType) => store.client
   );
+
+  const clientRepository = useClientRepository()
+  const comboRepository = useComboRepository()
 
   const titulo = isEditClient ? "Editar Cliente" : "Agregar Cliente";
 
@@ -44,10 +53,14 @@ export const ClientModal = () => {
 
   const { errors } = formState;
 
-  const { ref: refImg, ...restImg } = register("imagen", { required: "La imagen es requerida" });
-  const { ref: refCV, ...restCV } = register("hojaVida", {
-    required: "La hoja de vida es requerida",
-  });
+  const { ref: refImg, ...restImg } = register("imagen"
+  // , { required: "La imagen es requerida" }
+);
+  const { ref: refCV, ...restCV } = register("hojaVida"
+  // , {
+  //   required: "La hoja de vida es requerida",
+  // }
+);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>, type: "file" | "image") => {
     const file = event.target.files?.[0];
@@ -67,14 +80,37 @@ export const ClientModal = () => {
     }
   };
 
-  const onSubmit = (data: ClientForm) => {
-    console.log(data);
+  const onSubmit = async (data: ClientForm) => {
+    console.log(data)
+    if(!isEditClient){
+      const response = await clientRepository.create(data)
+      if(response){
+        dispatch(setClientsCatalog())
+        dispatch(setModalClient(!isModalClientOpen))
+      }
+    }else{
+      const response = await clientRepository.update(data)
+      if(response){
+        dispatch(setClientsCatalog())
+        dispatch(setModalClient(!isModalClientOpen))
+      }
+    }
   };
 
+  const loadCombos = async () => {
+    const response = await comboRepository.getDocumentTypes();
+    if(response){
+      setDocumentTypes(response)
+    }
+  }
+
   useEffect(() => {
-    console.log(detalleCliente);
     detalleCliente ? form.reset(detalleCliente) : form.reset(clientFormDefaultValues);
   }, [detalleCliente]);
+
+  useEffect(()=> {
+    loadCombos()
+  },[])
 
   return (
     <div>
@@ -129,19 +165,15 @@ export const ClientModal = () => {
               <Grid item gap={2} display="flex" width="100%">
                 <LabeledSelect
                   selectProps={{
-                    id: "tipoDocumento",
+                    id: "idTipoDocumento",
                     label: "Tipo de Documento",
                     variant: "outlined",
-                    ...register("tipoDocumento", { required: "El tipo de documento es requerido" }),
-                    error: !!errors.tipoDocumento,
+                    ...register("idTipoDocumento", { required: "El tipo de documento es requerido" }),
+                    error: !!errors.idTipoDocumento,
                     disabled: isEditClient,
                   }}
                   required
-                  options={[
-                    { value: 1, label: "DNI" },
-                    { value: 2, label: "RUC" },
-                    { value: 3, label: "CARNET DE EXTRANJERÍA" },
-                  ]}
+                  options={documentTypes}
                 />
                 <LabeledInput
                   BaseTextFieldProps={{
@@ -252,7 +284,7 @@ export const ClientModal = () => {
               <Divider />
               <Grid item gap={2} display="flex" justifyContent="flex-end" width="100%">
                 <Button variant="contained" color="primary" type="submit">
-                  Agregar
+                  {isEditClient ? "Editar" : "Agregar"}
                 </Button>
               </Grid>
             </Grid>

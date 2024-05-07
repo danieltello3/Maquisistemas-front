@@ -1,7 +1,7 @@
 import { Button, Container, Grid, Paper, Typography } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { clientCatalogColumns } from "./utils/ClientsCatalog.columns";
-import { ClientForm, ClientTable } from "../../models/clients.model";
+import { ClientTable } from "../../models/clients.model";
 import AddIcon from "@mui/icons-material/Add";
 import SearchBar from "../../components/ui/moleculs/SearchBar/SearchBar";
 import { useEffect, useState } from "react";
@@ -11,97 +11,19 @@ import { setDetalleClient, setEditClient, setModalClient } from "../../redux/sli
 import { RootStateType } from "../../redux/store";
 import { useNavigate } from "react-router-dom";
 import { ClientRowtoForm } from "../../adapters/Client.adapters";
+import useClientRepository from "../../hooks/repositories/useClientRepository";
+import { setClientsCatalog } from "../../redux/actions/client.actions";
+import { ThunkDispatch } from "@reduxjs/toolkit";
 
-const rows: ClientTable[] = [
-  {
-    id: 1,
-    apellidos: "Snow",
-    nombres: "Jon",
-    fechaNacimiento: "12/02/2000",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 2,
-    apellidos: "Lannister",
-    nombres: "Cersei",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 3,
-    apellidos: "Lannister",
-    nombres: "Jaime",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 4,
-    apellidos: "Stark",
-    nombres: "Arya",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 5,
-    apellidos: "Targaryen",
-    nombres: "Daenerys",
-    fechaNacimiento: "15/03/1996",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 6,
-    apellidos: "Melisandre",
-    nombres: "Jose",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 7,
-    apellidos: "Clifford",
-    nombres: "Ferrara",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 8,
-    apellidos: "Frances",
-    nombres: "Rossini",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-  {
-    id: 9,
-    apellidos: "Roxie",
-    nombres: "Harvey",
-    fechaNacimiento: "12/02/2001",
-    tipoDocumento: 1,
-    tipoDocumentoDescripcion: "DNI",
-    numeroDocumento: "12345678",
-  },
-];
 const ClientsCatalog = () => {
   const [filter, setFilter] = useState<string>("");
-  const [data, setData] = useState<ClientTable[]>(rows);
+  const [dataFiltrada, setDataFiltrada] = useState<ClientTable[]>([]);
 
+
+  const clientRepository = useClientRepository();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { isModalClientOpen } = useSelector((store: RootStateType) => store.client);
+  const dispatch = useDispatch<ThunkDispatch<any,any,any>>();
+  const { isModalClientOpen, catalog } = useSelector((store: RootStateType) => store.client);
 
   const buscarEnLista = (lista: ClientTable[], valorBuscado: string) => {
     return lista.filter((item) =>
@@ -111,7 +33,7 @@ const ClientsCatalog = () => {
     );
   };
 
-  const handleDetalle = (id: number) => {
+  const handleDetalle = (id: string) => {
     navigate(`/clients/${id}`);
   };
 
@@ -121,11 +43,28 @@ const ClientsCatalog = () => {
     dispatch(setModalClient(!isModalClientOpen));
   };
 
+  const handleDelete = async (id: string) => {
+    const response = await clientRepository.delete(id);
+    console.log(response)
+    if(response){
+      dispatch(setClientsCatalog());
+    }
+  }
+
   useEffect(() => {
-    console.log(filter);
-    const dataFiltrada = buscarEnLista(rows, filter);
-    setData(dataFiltrada);
-  }, [filter]);
+    if(filter !== ""){
+      const dataFiltrada = buscarEnLista(catalog, filter);
+      setDataFiltrada(dataFiltrada);
+    }
+  }, [filter,catalog]);
+
+  useEffect(()=> {
+    setDataFiltrada(catalog);
+  },[catalog])
+
+  useEffect(()=>{
+    dispatch(setClientsCatalog())
+  },[])
 
   return (
     <Container>
@@ -152,8 +91,8 @@ const ClientsCatalog = () => {
           </Grid>
           <Grid item xs>
             <DataGrid
-              rows={data}
-              columns={clientCatalogColumns(handleDetalle, handleEdit, () => {})}
+              rows={dataFiltrada}
+              columns={clientCatalogColumns(handleDetalle, handleEdit, handleDelete)}
               initialState={{
                 pagination: {
                   paginationModel: { page: 0, pageSize: 10 },

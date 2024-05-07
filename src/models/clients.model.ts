@@ -1,20 +1,21 @@
 export interface ClientTable {
-  id: number;
+  id: string;
   nombres: string;
   apellidos: string;
   fechaNacimiento: string;
-  tipoDocumento: number;
-  tipoDocumentoDescripcion: string;
-  numeroDocumento: string;
+  idTipoDocumento: number;
+  tipoDocumento: string;
+  nroDocumento: string;
 }
 
 export interface ClientForm {
-  id?: number;
+  id?: string;
   nombres: string;
   apellidos: string;
   fechaNacimiento: string;
-  tipoDocumento: number;
-  nroDocumento: string;
+  idTipoDocumento?: number;
+  tipoDocumento?: string;
+  nroDocumento?: string;
   imagen?: File;
   hojaVida?: File;
 }
@@ -23,7 +24,7 @@ export const clientFormDefaultValues: ClientForm = {
   nombres: "",
   apellidos: "",
   fechaNacimiento: "",
-  tipoDocumento: 1,
+  idTipoDocumento: 1,
   nroDocumento: "",
   imagen: null,
   hojaVida: null,
