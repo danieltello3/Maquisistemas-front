@@ -44,8 +44,7 @@ export class ClientRepositoryService implements ClientRepository{
   async delete(id: string): Promise<boolean> {
     try{
       const response = await axiosInstance.delete(`/api/Clients/${id}`);
-      console.log(response)
-      return response.status === 200 ? true : false;
+      return response.status === 200;
     }catch(err){
       console.error(err)
       return false;

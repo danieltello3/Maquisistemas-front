@@ -26,6 +26,7 @@ import { setClientsCatalog } from "../../../../redux/actions/client.actions";
 import { ThunkDispatch } from "@reduxjs/toolkit";
 import useComboRepository from "../../../../hooks/repositories/useComboRepository";
 import { ComboSelect } from "../../../../models/combo.model";
+import useAlert from "../../../../hooks/useAlert";
 
 export const ClientModal = () => {
   const [selectedFile, setSelectedFile] = useState<File>();
@@ -42,6 +43,8 @@ export const ClientModal = () => {
 
   const clientRepository = useClientRepository()
   const comboRepository = useComboRepository()
+
+  const alert = useAlert();
 
   const titulo = isEditClient ? "Editar Cliente" : "Agregar Cliente";
 
@@ -71,28 +74,27 @@ export const ClientModal = () => {
 
   const handleFileClick = (type: "file" | "image") => {
     if (type === "file" && inputRef.current) {
-      console.log(type, inputRef.current);
       inputRef.current.click();
     }
     if (type === "image" && imageRef.current) {
-      console.log(type, imageRef.current);
       imageRef.current.click();
     }
   };
 
   const onSubmit = async (data: ClientForm) => {
-    console.log(data)
     if(!isEditClient){
       const response = await clientRepository.create(data)
       if(response){
         dispatch(setClientsCatalog())
         dispatch(setModalClient(!isModalClientOpen))
+        alert.successAlert("Cliente creado correctamente")
       }
     }else{
       const response = await clientRepository.update(data)
       if(response){
         dispatch(setClientsCatalog())
         dispatch(setModalClient(!isModalClientOpen))
+        alert.successAlert("Cliente actualizado correctamente")
       }
     }
   };

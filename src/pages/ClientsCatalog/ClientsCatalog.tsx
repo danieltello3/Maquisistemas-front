@@ -4,6 +4,7 @@ import { clientCatalogColumns } from "./utils/ClientsCatalog.columns";
 import { ClientTable } from "../../models/clients.model";
 import AddIcon from "@mui/icons-material/Add";
 import SearchBar from "../../components/ui/moleculs/SearchBar/SearchBar";
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useEffect, useState } from "react";
 import { ClientModal } from "../../components/ui/organisms/ClientModal/ClientModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,15 +15,16 @@ import { ClientRowtoForm } from "../../adapters/Client.adapters";
 import useClientRepository from "../../hooks/repositories/useClientRepository";
 import { setClientsCatalog } from "../../redux/actions/client.actions";
 import { ThunkDispatch } from "@reduxjs/toolkit";
+import useAlert from "../../hooks/useAlert";
 
 const ClientsCatalog = () => {
   const [filter, setFilter] = useState<string>("");
   const [dataFiltrada, setDataFiltrada] = useState<ClientTable[]>([]);
 
-
   const clientRepository = useClientRepository();
   const navigate = useNavigate();
-  const dispatch = useDispatch<ThunkDispatch<any,any,any>>();
+  const alert = useAlert();
+  const dispatch = useDispatch<ThunkDispatch<any, any, any>>();
   const { isModalClientOpen, catalog } = useSelector((store: RootStateType) => store.client);
 
   const buscarEnLista = (lista: ClientTable[], valorBuscado: string) => {
@@ -44,27 +46,36 @@ const ClientsCatalog = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const response = await clientRepository.delete(id);
-    console.log(response)
-    if(response){
-      dispatch(setClientsCatalog());
-    }
-  }
+    const deleteClient = async (id: string) => {
+      const response = await clientRepository.delete(id);
+      if (response) {
+        dispatch(setClientsCatalog());
+      }
+    };
+    alert.warningAlert("¿Estas seguro de eliminar este cliente?").then((response) => {
+      if (response.isConfirmed) {
+        deleteClient(id);
+        alert.successAlert("Cliente eliminado correctamente");
+      }
+    });
+  };
 
   useEffect(() => {
-    if(filter !== ""){
+    if (filter !== "") {
       const dataFiltrada = buscarEnLista(catalog, filter);
       setDataFiltrada(dataFiltrada);
+    }else{
+      setDataFiltrada(catalog);
     }
-  }, [filter,catalog]);
+  }, [filter, catalog]);
 
-  useEffect(()=> {
+  useEffect(() => {
     setDataFiltrada(catalog);
-  },[catalog])
+  }, [catalog]);
 
-  useEffect(()=>{
-    dispatch(setClientsCatalog())
-  },[])
+  useEffect(() => {
+    dispatch(setClientsCatalog());
+  }, []);
 
   return (
     <Container>
@@ -77,17 +88,20 @@ const ClientsCatalog = () => {
           </Grid>
           <Grid item container justifyContent="space-between">
             <SearchBar filter={filter} setFilter={setFilter} />
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                dispatch(setEditClient(false));
-                dispatch(setDetalleClient(null));
-                dispatch(setModalClient(!isModalClientOpen));
-              }}>
-              Agregar Cliente
-            </Button>
+            <div style={{display: "flex", gap: 10}}>
+              <Button variant="outlined" color="success" startIcon={<FileDownloadIcon/>}>Exportar</Button>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  dispatch(setEditClient(false));
+                  dispatch(setDetalleClient(null));
+                  dispatch(setModalClient(!isModalClientOpen));
+                }}>
+                Agregar Cliente
+              </Button>
+            </div>
           </Grid>
           <Grid item xs>
             <DataGrid
@@ -100,6 +114,7 @@ const ClientsCatalog = () => {
               }}
               pageSizeOptions={[5, 10]}
               rowSelection={false}
+              autoHeight
             />
           </Grid>
         </Grid>
